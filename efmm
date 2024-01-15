@@ -1,0 +1,166 @@
+from abc import ABCMeta, abstractmethod
+
+class IEmployee(metaclass=ABCMeta):
+
+    @abstractmethod
+    def Age(self):
+        pass
+
+    @abstractmethod
+    def Seniority(self):
+        pass
+
+    @abstractmethod
+    def RetirementDate(self, retirement_age):
+        pass
+
+
+class IR(metaclass=ABCMeta):
+    
+
+    _tranches = [0, 30000, 30001, 50000, 50001, 60000, 60001, 80000, 80001, 180000]
+    _tauxIR = [0, 10, 20, 30, 34, 38]
+
+    @abstractmethod
+    def getIR(cls, salaire):
+
+        pass
+
+
+class Employee(IEmployee, metaclass=ABCMeta):
+    _counter = 0
+
+    def _init_(self, mtle=0, nom="El Kelkha", dateNaissance="31/03/2005", dateEmbauche="12/01/2024", salaireBase=7000):
+        Employee._counter += 1
+        self.__mtle = Employee._counter
+        self.__nom = nom
+        self.__dateNaissance = dateNaissance
+        self.__dateEmbauche = dateEmbauche
+        self.__salaireBase = salaireBase
+    
+    @property
+    def getmtle(self): 
+        return self.__mtle
+    
+    @property
+    def getnom(self):
+        return self.__nom
+    
+    @property
+    def getdateNaissance(self):
+        return self.__dateNaissance
+    
+    @property
+    def getdateEmbauche(self):
+        return self.__dateEmbauche
+    
+    @property
+    def getsalaireBase(self):
+        return self.__salaireBase
+    
+    def setmtle(self, mtle):
+        self.__mtle = mtle
+    
+    def setnom(self, nom):
+        self.__nom = nom
+    
+    def setdateNaissance(self, dateNaissance):
+        self.__dateNaissance = dateNaissance
+    
+    def setsalaireBase(self, salaireBase):
+        self.__salaireBase = salaireBase
+    
+    def setdateEmbauche(self, dateEmbauche):
+        if self.Age(dateEmbauche) < 20:
+            print("Unable to hire an employee who is not yet 20 years old")
+        else:
+            self.__dateEmbauche = dateEmbauche
+    
+    @abstractmethod
+    def salaireAPayer(self):
+        pass
+
+    def Age(self, dateEmbauche):
+        dateNaissance = datetime.strptime(self.getdateNaissance, '%d/%m/%Y')
+        dateEmbauche = datetime.strptime(dateEmbauche, '%d/%m/%Y')
+
+        age = dateEmbauche.year - dateNaissance.year
+        return age
+    
+    def Seniority(self):
+        nowyear = datetime.now().year
+        dateEmbauche = datetime.strptime(self.getdateEmbauche, '%d/%m/%Y')
+        
+        return nowyear - dateEmbauche.year
+    
+    def RetirementDate(self, retirement_age):
+        dateNaissance = datetime.strptime(self.getdateNaissance, '%d/%m/%Y')
+        
+        return dateNaissance.year + retirement_age
+    
+    def _str_(self):
+        return f"Employee ID: {self.getmtle} - Name: {self.getnom} - Date of Birth: {self.getdateNaissance} - Employment Date: {self.getdateEmbauche} - Base Salary: {self.getsalaireBase} - "
+    
+    def _eq_(self, other):
+        return self.getmtle == other.getmtle
+
+
+
+
+
+class Agent(Employee, IR):
+    def _init_(self, mtle=0, nom="El Kelkha", dateNaissance="31/03/2005", dateEmbauche="12/01/2024", salaireBase=7000, primeResponsabilite=0):
+        super()._init_(mtle, nom, dateNaissance, dateEmbauche, salaireBase)
+        self.primeResponsabilite = primeResponsabilite
+
+    def getIR(self, salaire):
+        for i in range(0, len(IR._tranches), 2):
+            if IR._tranches[i] <= salaire <= IR._tranches[i + 1]:
+                y = int(i / 2)
+                return IR._tauxIR[y]
+        return IR._tauxIR[len(IR._tauxIR) - 1]
+
+    def salaireAPayer(self):
+        return (self.getsalaireBase + self.primeResponsabilite) * (1 - self.getIR(self.getsalaireBase))
+
+
+
+class Trainer(Employee, IR):
+   
+    def _init_(self, mtle=0, nom="El Kelkha", dateNaissance="31/03/2005", dateEmbauche="12/01/2024", salaireBase=7000):
+        super()._init_(mtle, nom, dateNaissance, dateEmbauche, salaireBase)
+        self.__heureSup = 0
+        self.__tarifHsup = 70
+    
+    @property
+    def getheureSup(self):
+        return self.__heureSup
+    
+    @property
+    def gettarifHsup(self):
+        return self.__tarifHsup
+    
+    def setheureSup(self, hs1):
+        self.__heureSup = hs1
+    
+    def settarifHsup(self, ths1):
+        self.__tarifHsup = ths1
+    
+    def _str_(self):
+        return super()._str_() + f"Number of overtime hours per month: {self.getheureSup} - Remuneration per overtime hour: {self.gettarifHsup}"
+
+    def getIR(self, salaire):
+        for i in range(0, len(IR._tranches), 2):
+            if IR._tranches[i] <= salaire <= IR._tranches[i + 1]:
+                y = int(i / 2)
+                return IR._tauxIR[y]
+        return IR._tauxIR[len(IR._tauxIR) - 1]
+
+    def salaireAPayer(self):
+        return (self.getsalaireBase + self.getheureSup * self.gettarifHsup) * (1 - self.getIR(self.getsalaireBase))
+
+
+
+
+
+
